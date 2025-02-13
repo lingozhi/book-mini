@@ -212,3 +212,99 @@ slider {
   color: #ff6b81;
   background: #fff5f6;
 }
+
+.audio-player {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.vinyl-record {
+  width: 500rpx;
+  height: 500rpx;
+  margin-bottom: 60rpx;
+}
+
+.vinyl-record.playing {
+  animation: rotate 3s linear infinite;
+}
+
+.record-image {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.play-btn {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #ff6b81;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn image {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.video-player {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #000;
+}
+
+.video {
+  width: 100%;
+  height: 422rpx; /* 16:9 比例 */
+  margin-top: 50%;
+  transform: translateY(-50%);
+}
+
+.collection-view {
+  height: 100%;
+  padding: 32rpx;
+  overflow-y: auto;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.book-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.book-cover {
+  width: 200rpx;
+  height: 280rpx;
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.book-title {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: #333;
+  text-align: center;
+}

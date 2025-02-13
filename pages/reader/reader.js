@@ -14,13 +14,77 @@ Page({
     showFontPanel: false,
     showCatalog: false,
     chapters: [], // 章节列表
+    contentType: 'text', // 'text' | 'audio' | 'video' | 'collection'
+    audioContext: null,
+    videoContext: null,
+    isPlaying: false,
+    currentTime: '00:00',
+    duration: '30:00',
+    collection: [], // 图书集合
   },
 
   onLoad(options) {
-    const { id } = options;
-    this.loadBookInfo(id);
-    this.loadChapter(1);
+    const { id, type } = options;
+    this.setData({ contentType: type || 'text' });
+    
+    switch (type) {
+      case 'audio':
+        this.initAudio();
+        break;
+      case 'video':
+        // 视频context会在视频组件ready后初始化
+        break;
+      case 'collection':
+        this.loadCollection(id);
+        break;
+      default:
+        this.loadBookInfo(id);
+        this.loadChapter(1);
+        break;
+    }
+    
     this.loadChapters();
+  },
+
+  initAudio() {
+    const audioContext = wx.createInnerAudioContext();
+    audioContext.src = 'your_audio_url';
+    
+    audioContext.onTimeUpdate(() => {
+      this.setData({
+        currentTime: this.formatTime(audioContext.currentTime),
+        progress: (audioContext.currentTime / audioContext.duration) * 100
+      });
+    });
+    
+    audioContext.onEnded(() => {
+      this.setData({ isPlaying: false });
+    });
+    
+    this.setData({ audioContext });
+  },
+
+  onVideoReady() {
+    this.setData({
+      videoContext: wx.createVideoContext('reader-video')
+    });
+  },
+
+  loadCollection(id) {
+    // 从服务器加载图书集合
+    const collection = [
+      { id: 1, title: '第一册', cover: '/images/covers/1.jpg' },
+      { id: 2, title: '第二册', cover: '/images/covers/2.jpg' },
+      // ...更多册
+    ];
+    this.setData({ collection });
+  },
+
+  openBook(e) {
+    const { id } = e.currentTarget.dataset;
+    wx.navigateTo({
+      url: `/pages/reader/reader?id=${id}&type=text`
+    });
   },
 
   loadBookInfo(id) {
@@ -71,8 +135,14 @@ Page({
   },
 
   onProgressChange(e) {
-    const chapter = Math.round((e.detail.value / 100) * this.data.totalChapters);
-    this.loadChapter(chapter || 1);
+    if (this.data.contentType === 'audio') {
+      const { audioContext } = this.data;
+      const position = (e.detail.value / 100) * audioContext.duration;
+      audioContext.seek(position);
+    } else {
+      const chapter = Math.round((e.detail.value / 100) * this.data.totalChapters);
+      this.loadChapter(chapter || 1);
+    }
   },
 
   toggleTheme() {
@@ -136,5 +206,28 @@ Page({
     }));
     
     this.setData({ chapters });
-  }
+  },
+
+  togglePlay() {
+    const { audioContext, isPlaying } = this.data;
+    if (isPlaying) {
+      audioContext.pause();
+    } else {
+      audioContext.play();
+    }
+    this.setData({ isPlaying: !isPlaying });
+  },
+
+  formatTime(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  },
+
+  onUnload() {
+    // 页面卸载时释放音频资源
+    if (this.data.audioContext) {
+      this.data.audioContext.destroy();
+    }
+  },
 }); 

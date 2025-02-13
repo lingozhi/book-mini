@@ -1,5 +1,42 @@
 <view class="reader-container" bindtap="toggleControls">
+  <!-- 音频播放界面 -->
+  <view class="audio-player" wx:if="{{contentType === 'audio'}}">
+    <view class="vinyl-record {{isPlaying ? 'playing' : ''}}">
+      <image class="record-image" src="/images/vinyl-record.png"></image>
+    </view>
+    <view class="chapter-title">{{chapter.title}}</view>
+  </view>
+
+  <!-- 视频播放界面 -->
+  <view class="video-player" wx:elif="{{contentType === 'video'}}">
+    <video 
+      id="reader-video"
+      src="your_video_url"
+      bindready="onVideoReady"
+      show-center-play-btn="{{false}}"
+      controls="{{false}}"
+      class="video">
+    </video>
+    <view class="chapter-title">{{chapter.title}}</view>
+  </view>
+
+  <!-- 图书集合界面 -->
+  <view class="collection-view" wx:elif="{{contentType === 'collection'}}">
+    <view class="collection-grid">
+      <view class="book-item"
+            wx:for="{{collection}}"
+            wx:key="id"
+            bindtap="openBook"
+            data-id="{{item.id}}">
+        <image class="book-cover" src="{{item.cover}}" mode="aspectFill"></image>
+        <view class="book-title">{{item.title}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 文本阅读界面 -->
   <scroll-view 
+    wx:else
     scroll-y 
     class="content {{theme}}"
     enable-passive
@@ -21,9 +58,9 @@
       </view>
     </view>
 
-    <view class="bottom-bar">
+    <view class="bottom-bar" wx:if="{{contentType !== 'collection'}}">
       <view class="progress">
-        <text class="current">第{{currentChapter}}章</text>
+        <text class="current">{{contentType === 'text' ? '第' + currentChapter + '章' : currentTime}}</text>
         <slider 
           value="{{progress}}" 
           min="0" 
@@ -32,9 +69,24 @@
           backgroundColor="#ddd"
           block-size="12"
           bindchange="onProgressChange"/>
-        <text class="total">共{{totalChapters}}章</text>
+        <text class="total">{{contentType === 'text' ? '共' + totalChapters + '章' : duration}}</text>
       </view>
-      <view class="actions">
+      
+      <!-- 音频/视频控制按钮 -->
+      <view class="actions" wx:if="{{contentType === 'audio' || contentType === 'video'}}">
+        <view class="action-item" bindtap="prevChapter">
+          <image src="/images/icons/prev.png"></image>
+        </view>
+        <view class="action-item play-btn" bindtap="togglePlay">
+          <image src="{{isPlaying ? '/images/icons/pause.png' : '/images/icons/play.png'}}"></image>
+        </view>
+        <view class="action-item" bindtap="nextChapter">
+          <image src="/images/icons/next.png"></image>
+        </view>
+      </view>
+      
+      <!-- 文本阅读控制按钮 -->
+      <view class="actions" wx:else>
         <view class="action-item" bindtap="prevChapter">上一章</view>
         <view class="action-item" bindtap="toggleTheme">
           <image src="/images/icons/theme.png"></image>
