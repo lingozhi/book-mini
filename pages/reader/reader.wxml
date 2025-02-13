@@ -1,0 +1,75 @@
+<view class="reader-container" bindtap="toggleControls">
+  <scroll-view 
+    scroll-y 
+    class="content {{theme}}"
+    enable-passive
+    show-scrollbar="{{false}}"
+    bindscroll="onScroll"
+    style="font-size: {{fontSize}}rpx">
+    <view class="chapter-title">{{chapter.title}}</view>
+    <view class="chapter-content">{{chapter.content}}</view>
+  </scroll-view>
+
+  <view class="controls {{showControls ? 'show' : ''}}">
+    <view class="top-bar">
+      <view class="back" bindtap="goBack">
+        <image src="/images/icons/back.png"></image>
+      </view>
+      <view class="title">{{bookTitle}}</view>
+      <view class="menu" bindtap="showMenu">
+        <image src="/images/icons/menu.png"></image>
+      </view>
+    </view>
+
+    <view class="bottom-bar">
+      <view class="progress">
+        <text class="current">第{{currentChapter}}章</text>
+        <slider 
+          value="{{progress}}" 
+          min="0" 
+          max="100"
+          activeColor="#ff6b81"
+          backgroundColor="#ddd"
+          block-size="12"
+          bindchange="onProgressChange"/>
+        <text class="total">共{{totalChapters}}章</text>
+      </view>
+      <view class="actions">
+        <view class="action-item" bindtap="prevChapter">上一章</view>
+        <view class="action-item" bindtap="toggleTheme">
+          <image src="/images/icons/theme.png"></image>
+        </view>
+        <view class="action-item" bindtap="toggleFontPanel">
+          <image src="/images/icons/font.png"></image>
+        </view>
+        <view class="action-item" bindtap="nextChapter">下一章</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 字体大小面板 -->
+  <view class="font-panel {{showFontPanel ? 'show' : ''}}">
+    <view class="font-size-control">
+      <view class="size-btn {{fontSize <= 28 ? 'disabled' : ''}}" bindtap="decreaseFontSize">A-</view>
+      <view class="size-preview">{{fontSize}}</view>
+      <view class="size-btn {{fontSize >= 48 ? 'disabled' : ''}}" bindtap="increaseFontSize">A+</view>
+    </view>
+  </view>
+
+  <!-- 目录面板 -->
+  <view class="catalog-panel {{showCatalog ? 'show' : ''}}">
+    <view class="catalog-header">
+      <view class="catalog-title">目录</view>
+      <view class="catalog-close" bindtap="hideCatalog">×</view>
+    </view>
+    <scroll-view scroll-y class="catalog-content">
+      <view class="catalog-item {{currentChapter === index + 1 ? 'active' : ''}}"
+            wx:for="{{chapters}}"
+            wx:key="index"
+            bindtap="jumpToChapter"
+            data-chapter="{{index + 1}}">
+        第{{index + 1}}章 {{item.title}}
+      </view>
+    </scroll-view>
+  </view>
+</view> 

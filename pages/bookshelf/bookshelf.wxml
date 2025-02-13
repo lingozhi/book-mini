@@ -1,0 +1,33 @@
+<view class="container">
+  <scroll-view scroll-y class="book-grid">
+    <view class="book-list">
+      <view class="book-item" 
+            wx:for="{{books}}" 
+            wx:key="id"
+            bindtap="onBookTap"
+            data-id="{{item.id}}">
+        <image class="book-cover" 
+               src="{{item.coverUrl}}" 
+               mode="aspectFill"
+               lazy-load></image>
+        <text class="book-title">{{item.title}}</text>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <view class="tab-bar">
+    <view class="tab-item active">
+      <image class="tab-icon" src="/images/icons/bookshelf-active.png"></image>
+      <text>书架</text>
+    </view>
+    <view class="tab-item" bindtap="onAddTap">
+      <view class="add-button">
+        <image class="tab-icon" src="/images/icons/add.png"></image>
+      </view>
+    </view>
+    <view class="tab-item">
+      <image class="tab-icon" src="/images/icons/mine.png"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view> 
