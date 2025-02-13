@@ -7,7 +7,9 @@ Page({
   },
 
   onLoad() {
-    this.setTabBarStyle();
+    this.setData({
+      books: app.globalData.books
+    });
   },
 
   onShow() {
@@ -17,10 +19,9 @@ Page({
     });
   },
 
-  setTabBarStyle() {
-    wx.setNavigationBarColor({
-      frontColor: '#ffffff',
-      backgroundColor: '#ff6b81'
+  toggleEdit() {
+    this.setData({
+      isEditing: !this.data.isEditing
     });
   },
 
@@ -44,7 +45,7 @@ Page({
   onDeleteBook(e) {
     const bookId = e.currentTarget.dataset.id;
     wx.showModal({
-      title: '提示',
+      title: '删除提示',
       content: '确定要删除这本书吗？',
       success: (res) => {
         if (res.confirm) {
@@ -57,15 +58,9 @@ Page({
     });
   },
 
-  exitEditing() {
-    this.setData({
-      isEditing: false
-    });
-  },
-
   onAddTap() {
     wx.navigateTo({
       url: '/pages/bookstore/bookstore'
     });
   }
-}) 
+}); 
