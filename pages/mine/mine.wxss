@@ -91,3 +91,20 @@
   color: #333;
   margin-top: 60rpx;
 }
+
+/* 手机号绑定按钮 */
+.phone-btn {
+  width: 630rpx;
+  margin: 0 auto 20rpx;
+}
+
+.phone-btn button {
+  width: 100%;
+  height: 114rpx;
+  background: #fff;
+  border-radius: 124rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 114rpx;
+  border: none;
+}

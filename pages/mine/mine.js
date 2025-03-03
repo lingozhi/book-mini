@@ -13,6 +13,7 @@ Page({
   },
 
   onShow() {
+    this.checkLoginStatus();
     this.calculateReadingStats();
   },
 
@@ -20,21 +21,117 @@ Page({
     const userInfo = app.globalData.userInfo;
     if (userInfo) {
       this.setData({ userInfo });
+    } else {
+      this.setData({ userInfo: {} });
     }
   },
 
   login() {
+    // 直接调用微信登录，不再显示选择对话框
+    this.wechatLogin();
+  },
+
+  // 微信登录
+  wechatLogin() {
     wx.getUserProfile({
       desc: '用于完善用户资料',
       success: (res) => {
         const userInfo = res.userInfo;
-        this.setData({ userInfo });
-        app.globalData.userInfo = userInfo;
-        wx.setStorage({
-          key: 'userInfo',
-          data: userInfo
+        
+        // 打印用户信息到控制台
+        console.log('获取到的用户信息:', userInfo);
+        
+        // 显示加载中
+        wx.showLoading({
+          title: '登录中...',
+        });
+        
+        // 获取登录凭证
+        wx.login({
+          success: (loginRes) => {
+            // 打印登录凭证到控制台
+            console.log('登录凭证 code:', loginRes.code);
+            
+            if (loginRes.code) {
+              // 调用后端登录接口
+              wx.request({
+                url: 'https://test-b.creamoda.ai/we-chat/login', // 替换为你的后端登录接口
+                method: 'POST',
+                data: {
+                  code: loginRes.code,
+                  userInfo: userInfo
+                },
+                success: (result) => {
+                  wx.hideLoading();
+                  
+                  if (result.data.success) {
+                    // 登录成功，保存用户信息和后端返回的数据
+                    const userData = {
+                      ...userInfo,
+                      openid: result.data.openid, // 后端返回的openid
+                      // 其他后端返回的用户数据
+                    };
+                    
+                    this.setData({ userInfo: userData });
+                    app.globalData.userInfo = userData;
+                    
+                    wx.setStorage({
+                      key: 'userInfo',
+                      data: userData
+                    });
+                    
+                    wx.showToast({
+                      title: '登录成功',
+                      icon: 'success'
+                    });
+                  } else {
+                    wx.showToast({
+                      title: result.data.message || '登录失败',
+                      icon: 'none'
+                    });
+                  }
+                },
+                fail: (err) => {
+                  console.log('请求后端登录接口失败:', err);
+                  wx.hideLoading();
+                  wx.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                  });
+                }
+              });
+            } else {
+              wx.hideLoading();
+              wx.showToast({
+                title: '登录失败',
+                icon: 'none'
+              });
+            }
+          },
+          fail: (err) => {
+            console.log('wx.login 失败:', err);
+            wx.hideLoading();
+            wx.showToast({
+              title: '获取登录凭证失败',
+              icon: 'none'
+            });
+          }
+        });
+      },
+      fail: (err) => {
+        console.log('获取用户信息失败', err);
+        wx.showToast({
+          title: '已取消授权',
+          icon: 'none'
         });
       }
+    });
+  },
+
+  // 账号密码登录
+  accountLogin() {
+    wx.navigateTo({
+      url: '/pages/login/login'
     });
   },
 
@@ -105,5 +202,65 @@ Page({
         }
       }
     });
+  },
+
+  // 添加获取手机号码的方法
+  getPhoneNumber(e) {
+    console.log('获取手机号码返回数据:', e.detail);
+    
+    // 判断是否成功获取
+    if (e.detail.errMsg === 'getPhoneNumber:ok') {
+      // 获取成功，拿到加密数据
+      const encryptedData = e.detail.encryptedData;
+      const iv = e.detail.iv;
+      const code = ''; // 需要通过 wx.login 获取新的 code
+      
+      // 先获取新的 code
+      wx.login({
+        success: (res) => {
+          if (res.code) {
+            console.log('获取手机号码的 code:', res.code);
+            
+            // 这里应该将 encryptedData, iv 和 code 发送到后端解密
+            // 由于微信不允许在前端解密，必须在后端服务器解密获取手机号
+            console.log('需要发送到后端的数据:', {
+              encryptedData,
+              iv,
+              code: res.code
+            });
+            
+            // 模拟获取成功
+            wx.showToast({
+              title: '手机号获取成功',
+              icon: 'success'
+            });
+            
+            // 更新用户信息，添加手机号标记
+            // 实际应用中，这里应该使用后端返回的解密后的手机号
+            const updatedUserInfo = {
+              ...this.data.userInfo,
+              phoneNumber: '已绑定'  // 实际应用中应该是真实手机号
+            };
+            
+            this.setData({
+              userInfo: updatedUserInfo
+            });
+            
+            app.globalData.userInfo = updatedUserInfo;
+            
+            wx.setStorage({
+              key: 'userInfo',
+              data: updatedUserInfo
+            });
+          }
+        }
+      });
+    } else {
+      // 用户拒绝授权
+      wx.showToast({
+        title: '您拒绝了授权',
+        icon: 'none'
+      });
+    }
   }
 });
