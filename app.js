@@ -101,7 +101,7 @@ App({
     }
   },
 
-  // 设置请求拦截器，为所有请求添加 token
+  // 设置请求拦截器
   setupRequestInterceptor() {
     // 保存原始的 wx.request 方法
     const originalRequest = wx.request;
@@ -120,8 +120,8 @@ App({
           // 确保 header 对象存在
           options.header = options.header || {};
           
-          // 添加 token 到请求头
-          options.header['Authorization'] = `Bearer ${token}`;
+          // 添加 token 到请求头，使用正确的字段名
+          options.header['token'] = token;
         }
         
         // 调用原始的 request 方法

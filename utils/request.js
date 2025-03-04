@@ -1,60 +1,153 @@
+/**
+ * 网络请求工具类
+ */
 const app = getApp();
 
-// 封装请求方法
-const request = (url, method, data, showLoading = true) => {
-  return new Promise((resolve, reject) => {
+const request = {
+  /**
+   * 发送GET请求
+   * @param {string} url - 请求地址
+   * @param {Object} data - 请求参数
+   * @param {boolean} showLoading - 是否显示加载提示
+   * @param {string} token - 认证令牌
+   * @returns {Promise} - 返回Promise对象
+   */
+  get(url, data = {}, showLoading = true, token) {
+    return this.request('GET', url, data, showLoading, token);
+  },
+
+  /**
+   * 发送POST请求
+   * @param {string} url - 请求地址
+   * @param {Object} data - 请求参数
+   * @param {boolean} showLoading - 是否显示加载提示
+   * @param {string} token - 认证令牌
+   * @param {Object} customHeader - 自定义请求头
+   * @returns {Promise} - 返回Promise对象
+   */
+  post(url, data = {}, showLoading = true, token, customHeader) {
+    return this.request('POST', url, data, showLoading, token, customHeader);
+  },
+
+  /**
+   * 发送请求
+   * @param {string} method - 请求方法
+   * @param {string} url - 请求地址
+   * @param {Object} data - 请求参数
+   * @param {boolean} showLoading - 是否显示加载提示
+   * @param {string} token - 认证令牌
+   * @param {Object} customHeader - 自定义请求头
+   * @returns {Promise} - 返回Promise对象
+   */
+  request(method, url, data, showLoading, token, customHeader) {
+    // 显示加载提示
     if (showLoading) {
       wx.showLoading({
-        title: '加载中',
+        title: '加载中...',
         mask: true
       });
     }
-    
-    wx.request({
-      url: app.globalData.baseUrl + url,
-      method: method,
-      data: data,
-      success: (res) => {
-        if (res.statusCode === 200) {
+
+    // 完整URL
+    const fullUrl = url.startsWith('http') ? url : app.globalData.baseUrl + url;
+
+    // 准备请求头
+    let header = {
+      'content-type': 'application/json'
+    };
+
+    // 如果提供了token，添加到请求头
+    if (token) {
+      // Try different header formats
+      header['token'] = token;
+      header['Token'] = token; // Try uppercase first letter
+      header['Authorization'] = `Bearer ${token}`; // Try Bearer format
+      console.log('Using provided token:', token);
+    } else {
+      // 如果没有提供token，尝试从本地存储获取
+      const storedToken = wx.getStorageSync('token');
+      if (storedToken) {
+        // Try different header formats
+        header['token'] = storedToken;
+        header['Token'] = storedToken; // Try uppercase first letter
+        header['Authorization'] = `Bearer ${storedToken}`; // Try Bearer format
+        console.log('Using stored token:', storedToken);
+      } else {
+        console.log('No token available');
+      }
+    }
+
+    // Merge with custom headers if provided
+    if (customHeader) {
+      header = {...header, ...customHeader};
+    }
+
+    console.log('Final request headers:', header);
+
+    // 返回Promise对象
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: fullUrl,
+        method: method,
+        data: data,
+        header: header,
+        success: (res) => {
+          console.log('Response status:', res.statusCode);
+          console.log('Response data:', res.data);
+          
           // 请求成功
-          if (res.data.code === 0) {
+          if (res.statusCode === 200) {
             // 业务逻辑成功
-            resolve(res.data);
+            if (res.data.code === 200) {
+              resolve(res.data);
+            } else {
+              // 业务逻辑失败
+              reject(res.data);
+              // 显示错误信息
+              wx.showToast({
+                title: res.data.message || '请求失败',
+                icon: 'none'
+              });
+              
+              // 如果是401错误，可能是token过期
+              if (res.data.errorCode === "401") {
+                handleTokenExpired();
+              }
+            }
+          } else if (res.statusCode === 401) {
+            // 未授权，可能是token无效或过期
+            console.error('未授权访问，可能是token无效:', res);
+            handleTokenExpired();
+            reject(res.data);
           } else {
-            // 业务逻辑失败
+            // HTTP请求失败
+            reject(res);
+            // 显示错误信息
             wx.showToast({
-              title: res.data.message || '请求失败',
+              title: `请求失败(${res.statusCode})`,
               icon: 'none'
             });
-            reject(res.data);
           }
-        } else if (res.statusCode === 401) {
-          // token 过期或无效，需要重新登录
-          handleTokenExpired();
-          reject(res.data);
-        } else {
-          // 其他错误
+        },
+        fail: (err) => {
+          // 请求失败
+          console.error('请求失败:', err);
+          reject(err);
+          // 显示错误信息
           wx.showToast({
-            title: '服务器错误',
+            title: '网络错误',
             icon: 'none'
           });
-          reject(res);
+        },
+        complete: () => {
+          // 隐藏加载提示
+          if (showLoading) {
+            wx.hideLoading();
+          }
         }
-      },
-      fail: (err) => {
-        wx.showToast({
-          title: '网络错误',
-          icon: 'none'
-        });
-        reject(err);
-      },
-      complete: () => {
-        if (showLoading) {
-          wx.hideLoading();
-        }
-      }
+      });
     });
-  });
+  }
 };
 
 // 处理 token 过期
@@ -81,18 +174,4 @@ const handleTokenExpired = () => {
   }, 2000);
 };
 
-// 导出请求方法
-module.exports = {
-  get: (url, data, showLoading) => {
-    return request(url, 'GET', data, showLoading);
-  },
-  post: (url, data, showLoading) => {
-    return request(url, 'POST', data, showLoading);
-  },
-  put: (url, data, showLoading) => {
-    return request(url, 'PUT', data, showLoading);
-  },
-  delete: (url, data, showLoading) => {
-    return request(url, 'DELETE', data, showLoading);
-  }
-}; 
+module.exports = request; 

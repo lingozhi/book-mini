@@ -31,30 +31,93 @@ Page({
     
     this.setData({ loading: true });
     
-    request.post('/book/list', {
-      pageIndex: this.data.pageIndex,
-      pageSize: this.data.pageSize,
-      // 其他筛选参数可以根据需要添加
-    }, false).then(res => {
-      const newBooks = res.data.list.map(book => ({
-        id: book.id,
-        title: book.name,
-        author: book.author,
-        coverUrl: book.coverPath,
-        illustrator: book.illustrator,
-        isbn: book.isbn
-      }));
-      
-      this.setData({
-        books: refresh ? newBooks : [...this.data.books, ...newBooks],
-        pageIndex: this.data.pageIndex + 1,
-        hasMore: newBooks.length === this.data.pageSize
+    // 获取token
+    const token = wx.getStorageSync('token');
+    console.log('Using token for book list request:', token);
+    
+    if (!token) {
+      console.log('No token available, redirecting to login');
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none',
+        duration: 2000
       });
-    }).catch(err => {
-      console.error('获取书籍列表失败', err);
-    }).finally(() => {
+      
+      setTimeout(() => {
+        wx.navigateTo({
+          url: '/pages/mine/mine'
+        });
+      }, 2000);
+      
       this.setData({ loading: false });
-      wx.stopPullDownRefresh();
+      return;
+    }
+    
+    // Try a direct wx.request approach instead of using the utility
+    wx.request({
+      url: app.globalData.baseUrl + '/book/list',
+      method: 'POST',
+      data: {
+        pageIndex: this.data.pageIndex,
+        pageSize: this.data.pageSize
+      },
+      header: {
+        'content-type': 'application/json',
+        'token': token
+      },
+      success: (res) => {
+        console.log('Book list response:', res);
+        
+        if (res.statusCode === 200 && res.data.code === 200) {
+          const newBooks = res.data.data.list.map(book => ({
+            id: book.id,
+            title: book.name,
+            author: book.author,
+            coverUrl: book.coverPath,
+            illustrator: book.illustrator,
+            isbn: book.isbn
+          }));
+          
+          this.setData({
+            books: refresh ? newBooks : [...this.data.books, ...newBooks],
+            pageIndex: this.data.pageIndex + 1,
+            hasMore: newBooks.length === this.data.pageSize
+          });
+        } else if (res.statusCode === 401 || (res.data && res.data.errorCode === "401")) {
+          console.error('Token authentication failed:', res);
+          wx.showToast({
+            title: '请先登录',
+            icon: 'none',
+            duration: 2000
+          });
+          
+          // Clear invalid token
+          wx.removeStorageSync('token');
+          
+          setTimeout(() => {
+            wx.navigateTo({
+              url: '/pages/mine/mine'
+            });
+          }, 2000);
+        } else {
+          console.error('获取书籍列表失败', res);
+          wx.showToast({
+            title: res.data.message || '获取书籍列表失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('请求失败:', err);
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      },
+      complete: () => {
+        this.setData({ loading: false });
+        wx.stopPullDownRefresh();
+      }
     });
   },
 

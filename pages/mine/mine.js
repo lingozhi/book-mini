@@ -95,9 +95,12 @@ Page({
                     app.globalData.userInfo = userData;
                     
                     // 单独保存 token 到本地存储，方便其他地方使用
+                    console.log('Token being saved:', token);
                     wx.setStorage({
                       key: 'token',
-                      data: token
+                      data: token,
+                      success: () => console.log('Token saved successfully'),
+                      fail: (err) => console.error('Failed to save token:', err)
                     });
                     
                     // 保存完整用户信息到本地存储
