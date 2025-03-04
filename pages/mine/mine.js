@@ -55,26 +55,52 @@ Page({
             if (loginRes.code) {
               // 调用后端登录接口
               wx.request({
-                url: 'https://test-b.creamoda.ai/we-chat/login', // 替换为你的后端登录接口
+                url: 'https://book.aimoda.tech/we-chat/login', // 替换为你的后端登录接口
                 method: 'POST',
                 data: {
                   code: loginRes.code,
-                  userInfo: userInfo
+                  userInfo: userInfo,
+                  signature:''
                 },
                 success: (result) => {
                   wx.hideLoading();
                   
-                  if (result.data.success) {
-                    // 登录成功，保存用户信息和后端返回的数据
+                  console.log('登录接口返回数据:', result.data);
+                  
+                  if (result.data.code === 200) {
+                    // 登录成功，解析后端返回的数据
+                    const responseData = result.data.data;
+                    const userProfileData = responseData.userInfo.userProfile;
+                    const weChatUserInfo = userProfileData.weChatUserInfo;
+                    const token = responseData.userInfo.token;
+                    
+                    // 构建用户数据对象
                     const userData = {
-                      ...userInfo,
-                      openid: result.data.openid, // 后端返回的openid
-                      // 其他后端返回的用户数据
+                      nickName: weChatUserInfo.nickname,
+                      avatarUrl: weChatUserInfo.avatarPath,
+                      token: token,
+                      phoneNumber: weChatUserInfo.phoneNumber,
+                      userId: weChatUserInfo.id
                     };
                     
+                    console.log('处理后的用户数据:', userData);
+                    
+                    // 确保 userData 中有 nickName
+                    if (!userData.nickName) {
+                      userData.nickName = '微信用户'; // 如果后端没有返回昵称，使用默认值
+                    }
+                    
+                    // 更新本地状态
                     this.setData({ userInfo: userData });
                     app.globalData.userInfo = userData;
                     
+                    // 单独保存 token 到本地存储，方便其他地方使用
+                    wx.setStorage({
+                      key: 'token',
+                      data: token
+                    });
+                    
+                    // 保存完整用户信息到本地存储
                     wx.setStorage({
                       key: 'userInfo',
                       data: userData
@@ -85,6 +111,7 @@ Page({
                       icon: 'success'
                     });
                   } else {
+                    // 登录失败
                     wx.showToast({
                       title: result.data.message || '登录失败',
                       icon: 'none'

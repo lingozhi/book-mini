@@ -1,33 +1,64 @@
 const app = getApp();
+const request = require('../../utils/request');
 
 Page({
   data: {
     books: [],
-    isEditing: false
+    loading: false,
+    pageIndex: 1,
+    pageSize: 10,
+    hasMore: true
   },
 
   onLoad() {
-    this.setData({
-      books: app.globalData.books
-    });
+    this.fetchBooks();
   },
 
   onShow() {
     // 每次显示页面时刷新书架数据
-    this.setData({
-      books: app.globalData.books
-    });
+    this.fetchBooks(true);
   },
 
-  toggleEdit() {
-    this.setData({
-      isEditing: !this.data.isEditing
+  fetchBooks(refresh = false) {
+    if (refresh) {
+      this.setData({
+        pageIndex: 1,
+        hasMore: true
+      });
+    }
+    
+    if (!this.data.hasMore || this.data.loading) return;
+    
+    this.setData({ loading: true });
+    
+    request.post('/book/list', {
+      pageIndex: this.data.pageIndex,
+      pageSize: this.data.pageSize,
+      // 其他筛选参数可以根据需要添加
+    }, false).then(res => {
+      const newBooks = res.data.list.map(book => ({
+        id: book.id,
+        title: book.name,
+        author: book.author,
+        coverUrl: book.coverPath,
+        illustrator: book.illustrator,
+        isbn: book.isbn
+      }));
+      
+      this.setData({
+        books: refresh ? newBooks : [...this.data.books, ...newBooks],
+        pageIndex: this.data.pageIndex + 1,
+        hasMore: newBooks.length === this.data.pageSize
+      });
+    }).catch(err => {
+      console.error('获取书籍列表失败', err);
+    }).finally(() => {
+      this.setData({ loading: false });
+      wx.stopPullDownRefresh();
     });
   },
 
   onBookTap(e) {
-    if (this.data.isEditing) return;
-    
     const bookId = e.currentTarget.dataset.id;
     const progress = app.globalData.readingProgress[bookId] || {};
     
@@ -36,31 +67,17 @@ Page({
     });
   },
 
-  onLongPress() {
-    this.setData({
-      isEditing: true
-    });
-  },
-
-  onDeleteBook(e) {
-    const bookId = e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '删除提示',
-      content: '确定要删除这本书吗？',
-      success: (res) => {
-        if (res.confirm) {
-          const books = this.data.books.filter(book => book.id !== bookId);
-          this.setData({ books });
-          app.globalData.books = books;
-          app.saveBooks();
-        }
-      }
-    });
-  },
-
   onAddTap() {
     wx.navigateTo({
       url: '/pages/bookstore/bookstore'
     });
+  },
+  
+  onPullDownRefresh() {
+    this.fetchBooks(true);
+  },
+  
+  onReachBottom() {
+    this.fetchBooks();
   }
 }); 
