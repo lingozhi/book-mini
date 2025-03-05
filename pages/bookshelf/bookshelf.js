@@ -35,23 +35,23 @@ Page({
     const token = wx.getStorageSync('token');
     console.log('Using token for book list request:', token);
     
-    if (!token) {
-      console.log('No token available, redirecting to login');
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none',
-        duration: 2000
-      });
+    // if (!token) {
+    //   console.log('No token available, redirecting to login');
+    //   wx.showToast({
+    //     title: '请先登录',
+    //     icon: 'none',
+    //     duration: 2000
+    //   });
       
-      setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/mine/mine'
-        });
-      }, 2000);
+    //   setTimeout(() => {
+    //     wx.navigateTo({
+    //       url: '/pages/mine/mine'
+    //     });
+    //   }, 2000);
       
-      this.setData({ loading: false });
-      return;
-    }
+    //   this.setData({ loading: false });
+    //   return;
+    // }
     
     // Try a direct wx.request approach instead of using the utility
     wx.request({

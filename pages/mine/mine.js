@@ -55,7 +55,7 @@ Page({
             if (loginRes.code) {
               // 调用后端登录接口
               wx.request({
-                url: 'https://book.aimoda.tech/we-chat/login', // 替换为你的后端登录接口
+                url: 'http://120.79.48.168:8080/we-chat/login', // 替换为你的后端登录接口
                 method: 'POST',
                 data: {
                   code: loginRes.code,

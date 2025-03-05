@@ -3,7 +3,7 @@ App({
   globalData: {
     userInfo: null,
     isLoggedIn: false,
-    baseUrl: 'https://book.aimoda.tech', // 替换为你的实际接口地址
+    baseUrl: 'http://120.79.48.168:8080', // 替换为你的实际接口地址
     books: [
       {
         id: '1',

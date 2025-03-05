@@ -27,7 +27,7 @@
     </view>
   </scroll-view>
 
-  <view class="float-button" bindtap="onAddTap">
+  <!-- <view class="float-button" bindtap="onAddTap">
     <image class="add-icon" src="/images/icons/add.png"></image>
-  </view>
+  </view> -->
 </view> 
