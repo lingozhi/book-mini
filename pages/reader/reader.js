@@ -24,8 +24,12 @@ Page({
   },
 
   onLoad(options) {
-    const { id, type } = options;
-    this.setData({ contentType: type || 'text' });
+    const { id, type, chapter } = options;
+    this.bookId = id; // Store book ID for later use
+    this.setData({ 
+      contentType: type || 'text',
+      currentChapter: parseInt(chapter) || 1
+    });
     
     switch (type) {
       case 'audio':
@@ -39,7 +43,6 @@ Page({
         break;
       default:
         this.loadBookInfo(id);
-        this.loadChapter(1);
         break;
     }
     
@@ -88,20 +91,113 @@ Page({
   },
 
   loadBookInfo(id) {
-    // 这里应该从服务器获取书籍信息
-    this.setData({
-      bookTitle: '软诱',
-      totalChapters: 100
+    wx.showLoading({
+      title: '加载中...',
+    });
+    
+    wx.request({
+      url: getApp().globalData.baseUrl + `/book/get/${id}`,
+      method: 'GET',
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.code === 0) {
+          const bookData = res.data.data;
+          this.setData({
+            bookTitle: bookData.name,
+            'chapter.content': bookData.richText || '暂无内容',
+            totalChapters: 1, // 如果没有章节信息，默认为1章
+            progress: (this.data.currentChapter / 1) * 100
+          });
+          
+          // 更新章节标题
+          this.setData({
+            'chapter.title': `${bookData.name}`
+          });
+          
+          // 保存阅读进度
+          this.saveReadingProgress();
+        } else {
+          wx.showToast({
+            title: res.data.message || '获取图书信息失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('请求失败:', err);
+        wx.showToast({
+          title: '网络错误',
+          icon: 'none'
+        });
+      },
+      complete: () => {
+        wx.hideLoading();
+      }
     });
   },
 
   loadChapter(chapterNo) {
+    // 如果是单章节内容，直接使用已加载的内容
+    if (this.data.totalChapters === 1) {
+      this.setData({
+        currentChapter: 1,
+        progress: 100
+      });
+      return;
+    }
+    
     // 这里应该从服务器获取章节内容
+    // 如果有多章节API，可以在这里实现
     this.setData({
-      'chapter.title': `第${chapterNo}章 示例章节`,
-      'chapter.content': '这是示例章节的内容...',
+      'chapter.title': `第${chapterNo}章`,
+      'chapter.content': '正在加载章节内容...',
       currentChapter: chapterNo,
       progress: (chapterNo / this.data.totalChapters) * 100
+    });
+    
+    // 保存阅读进度
+    this.saveReadingProgress();
+  },
+
+  saveReadingProgress() {
+    // 保存阅读进度到全局数据
+    const app = getApp();
+    if (!app.globalData.readingProgress) {
+      app.globalData.readingProgress = {};
+    }
+    
+    app.globalData.readingProgress[this.bookId] = {
+      chapter: this.data.currentChapter,
+      progress: this.data.progress,
+      timestamp: new Date().getTime()
+    };
+    
+    // 可以选择同步到服务器
+    // this.syncReadingProgress();
+  },
+
+  syncReadingProgress() {
+    // 将阅读进度同步到服务器的示例代码
+    const token = wx.getStorageSync('token');
+    if (!token) return;
+    
+    wx.request({
+      url: getApp().globalData.baseUrl + '/reading/progress/save',
+      method: 'POST',
+      data: {
+        bookId: this.bookId,
+        chapter: this.data.currentChapter,
+        progress: this.data.progress
+      },
+      header: {
+        'content-type': 'application/json',
+        'token': token
+      },
+      success: (res) => {
+        console.log('Progress synced:', res);
+      },
+      fail: (err) => {
+        console.error('Progress sync failed:', err);
+      }
     });
   },
 
