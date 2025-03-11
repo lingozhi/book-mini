@@ -1,0 +1,6 @@
+<view class="content {{theme}}">
+  <view class="chapter-title">{{chapter.title || '未知标题'}}</view>
+  <view class="chapter-content">
+    <text>{{chapter.content || '暂无内容'}}</text>
+  </view>
+</view> 

@@ -1,51 +1,47 @@
 <view class="reader-container" bindtap="toggleControls">
-  <!-- 音频播放界面 -->
-  <view class="audio-player" wx:if="{{contentType === 'audio'}}">
-    <view class="vinyl-record {{isPlaying ? 'playing' : ''}}">
-      <image class="record-image" src="/images/vinyl-record.png"></image>
-    </view>
-    <view class="chapter-title">{{chapter.title}}</view>
+  <!-- 直接显示内容（调试用） -->
+  <view wx:if="{{contentType === 'text'}}" class="debug-content">
+    <view>标题: {{chapter.title}}</view>
+    <view>内容: {{chapter.content ? '有内容' : '无内容'}}</view>
+    <view>内容长度: {{chapter.content.length}}</view>
   </view>
+
+  <!-- 音频播放界面 -->
+  <audio-reader 
+    wx:if="{{contentType === 'audio'}}"
+    chapter="{{chapter}}"
+    isPlaying="{{isPlaying}}"
+  ></audio-reader>
 
   <!-- 视频播放界面 -->
-  <view class="video-player" wx:elif="{{contentType === 'video'}}">
-    <video 
-      id="reader-video"
-      src="your_video_url"
-      bindready="onVideoReady"
-      show-center-play-btn="{{false}}"
-      controls="{{false}}"
-      class="video">
-    </video>
-    <view class="chapter-title">{{chapter.title}}</view>
-  </view>
+  <video-reader 
+    wx:elif="{{contentType === 'video'}}"
+    chapter="{{chapter}}"
+    videoUrl="{{videoUrl}}"
+    bind:videoReady="onVideoReady"
+    bind:fullscreenchange="onVideoFullscreenChange"
+    bind:videoerror="onVideoError"
+    bind:statechange="onVideoStateChange"
+    bind:ended="onVideoEnded"
+    bind:prev="prevChapter"
+    bind:next="nextChapter"
+  ></video-reader>
 
   <!-- 图书集合界面 -->
-  <view class="collection-view" wx:elif="{{contentType === 'collection'}}">
-    <view class="collection-grid">
-      <view class="book-item"
-            wx:for="{{collection}}"
-            wx:key="id"
-            bindtap="openBook"
-            data-id="{{item.id}}">
-        <image class="book-cover" src="{{item.cover}}" mode="aspectFill"></image>
-        <view class="book-title">{{item.title}}</view>
-      </view>
-    </view>
-  </view>
+  <book-collection 
+    wx:elif="{{contentType === 'collection'}}"
+    collection="{{collection}}"
+    bind:bookSelect="onBookTap"
+  ></book-collection>
 
   <!-- 文本阅读界面 -->
-  <scroll-view 
+  <text-reader 
     wx:else
-    scroll-y 
-    class="content {{theme}}"
-    enable-passive
-    show-scrollbar="{{false}}"
-    bindscroll="onScroll"
-    style="font-size: {{fontSize}}rpx">
-    <view class="chapter-title">{{chapter.title}}</view>
-    <view class="chapter-content">{{chapter.content}}</view>
-  </scroll-view>
+    chapter="{{chapter}}"
+    fontSize="{{fontSize}}"
+    theme="{{theme}}"
+    bind:scroll="onScroll"
+  ></text-reader>
 
   <view class="controls {{showControls ? 'show' : ''}}">
     <view class="top-bar">

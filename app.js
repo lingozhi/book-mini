@@ -99,6 +99,9 @@ App({
         }
       });
     }
+
+    // 在控制台输出当前使用的API基础URL
+    console.log('当前API基础URL:', this.globalData.baseUrl);
   },
 
   // 设置请求拦截器

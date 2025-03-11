@@ -1,0 +1,6 @@
+<view class="audio-player">
+  <view class="vinyl-record {{isPlaying ? 'playing' : ''}}">
+    <image class="record-image" src="/images/vinyl-record.png"></image>
+  </view>
+  <view class="chapter-title">{{chapter.title || '未知标题'}}</view>
+</view> 

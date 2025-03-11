@@ -1,0 +1,12 @@
+<view class="collection-view">
+  <view class="collection-grid">
+    <view class="book-item"
+          wx:for="{{collection}}"
+          wx:key="id"
+          bindtap="openBook"
+          data-id="{{item.id}}">
+      <image class="book-cover" src="{{item.cover}}" mode="aspectFill"></image>
+      <view class="book-title">{{item.title}}</view>
+    </view>
+  </view>
+</view> 

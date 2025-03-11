@@ -1,0 +1,24 @@
+.content {
+  height: 100%;
+  padding: 32rpx;
+  display: block;
+  background-color: #fff;
+}
+
+.content.night {
+  background: #222;
+  color: #bbb;
+}
+
+.chapter-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.chapter-content {
+  font-size: 32rpx;
+  line-height: 1.8;
+  text-align: justify;
+}
