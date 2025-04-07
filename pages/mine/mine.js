@@ -15,15 +15,54 @@ Page({
   onShow() {
     this.checkLoginStatus();
     this.calculateReadingStats();
+    
+    // 检查token是否已过期
+    const token = wx.getStorageSync('token');
+    if (!token && this.data.userInfo.nickName) {
+      // Token不存在但用户信息还在，说明可能是token过期
+      this.onTokenExpired();
+    }
   },
 
   checkLoginStatus() {
-    const userInfo = app.globalData.userInfo;
-    if (userInfo) {
+    // 检查token是否存在
+    const token = wx.getStorageSync('token');
+    
+    // 检查全局用户数据
+    let userInfo = app.globalData.userInfo;
+    
+    // 只有当token存在且userInfo存在时才视为已登录
+    if (token && userInfo) {
       this.setData({ userInfo });
     } else {
+      // 没有token或userInfo为空，清除登录状态
       this.setData({ userInfo: {} });
+      app.globalData.userInfo = null;
+      app.globalData.isLoggedIn = false;
+      
+      // 如果本地有缓存但token不存在，则清除缓存
+      if (!token && wx.getStorageSync('userInfo')) {
+        wx.removeStorageSync('userInfo');
+      }
     }
+  },
+
+  // 新增监听token过期的方法
+  onTokenExpired() {
+    // 清除用户信息，展示登录按钮
+    this.setData({ userInfo: {} });
+    // 确保全局状态也被清除
+    app.globalData.userInfo = null;
+    app.globalData.isLoggedIn = false;
+    
+    // 清除存储的用户信息和token
+    wx.removeStorageSync('userInfo');
+    wx.removeStorageSync('token');
+    
+    wx.showToast({
+      title: '请重新登录',
+      icon: 'none'
+    });
   },
 
   login() {

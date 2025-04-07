@@ -1,11 +1,11 @@
-<view class="video-player">
+<view class="video-player" bindtap="showControlsUI">
   <video 
     id="reader-video"
     src="{{videoUrl}}"
     bindready="onVideoReady"
     bindloadedmetadata="onVideoLoad"
     binderror="onVideoError"
-    show-center-play-btn="{{true}}"
+    show-center-play-btn="{{false}}"
     controls="{{true}}"
     autoplay="{{true}}"
     object-fit="contain"
@@ -13,41 +13,27 @@
     bindplay="onVideoPlay"
     bindpause="onVideoPause"
     bindended="onVideoEnd"
-    class="video">
+    class="video {{isRotated ? 'video-rotated' : ''}}">
   </video>
-  <view class="chapter-title" wx:if="{{!isFullScreen}}">{{chapter.title || '未知标题'}}</view>
   
-  <!-- 加载状态 -->
-  <view class="video-loading" wx:if="{{isLoading}}">
-    <view class="loading-spinner"></view>
-    <view class="loading-text">视频加载中...</view>
+  <!-- 自定义控制按钮 -->
+  <view class="custom-controls {{showControls ? 'show' : 'hide'}}">
+    <view class="control-btn rotate-btn" catchtap="toggleRotate">
+      <view class="rotate-icon {{isRotated ? 'rotated' : ''}}">⟲</view>
+    </view>
   </view>
   
-  <!-- 错误状态 -->
+  <!-- 视频播放控制 -->
+  <view class="video-controls-overlay" catchtap="togglePlay" wx:if="{{!isPlaying && showControls}}">
+    <view class="center-play-btn">
+      <view class="play-icon">▶</view>
+    </view>
+  </view>
+  
+  <!-- 错误状态 - 仅保留错误指示器，移除加载指示器 -->
   <view class="video-error" wx:if="{{hasError}}">
     <view class="error-icon">!</view>
-    <view class="error-text">{{errorMsg}}</view>
+    <view class="error-text">{{errorMsg || '视频加载失败'}}</view>
     <view class="retry-btn" bindtap="retryVideo">重试</view>
-  </view>
-  
-  <!-- 自定义控制器 -->
-  <view class="video-controls" wx:if="{{!isFullScreen}}">
-    <view class="control-btn prev" bindtap="prevVideo">
-      <image src="/images/icons/prev.png"></image>
-    </view>
-    <view class="control-btn play" bindtap="togglePlay">
-      <image src="{{isPlaying ? '/images/icons/pause.png' : '/images/icons/play.png'}}"></image>
-    </view>
-    <view class="control-btn next" bindtap="nextVideo">
-      <image src="/images/icons/next.png"></image>
-    </view>
-  </view>
-  
-  <!-- 添加调试信息 -->
-  <view class="debug-info" wx:if="{{false}}">
-    <view>视频URL: {{videoUrl || '无'}}</view>
-    <view>加载状态: {{isLoading ? '加载中' : '已加载'}}</view>
-    <view>错误状态: {{hasError ? '有错误' : '无错误'}}</view>
-    <view>播放状态: {{isPlaying ? '播放中' : '已暂停'}}</view>
   </view>
 </view> 

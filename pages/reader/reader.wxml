@@ -1,10 +1,4 @@
 <view class="reader-container" bindtap="toggleControls">
-  <!-- 直接显示内容（调试用） -->
-  <view wx:if="{{contentType === 'text'}}" class="debug-content">
-    <view>标题: {{chapter.title}}</view>
-    <view>内容: {{chapter.content ? '有内容' : '无内容'}}</view>
-    <view>内容长度: {{chapter.content.length}}</view>
-  </view>
 
   <!-- 音频播放界面 -->
   <audio-reader 
@@ -19,12 +13,14 @@
     chapter="{{chapter}}"
     videoUrl="{{videoUrl}}"
     bind:videoReady="onVideoReady"
+    bind:videoLoaded="onVideoLoaded"
     bind:fullscreenchange="onVideoFullscreenChange"
     bind:videoerror="onVideoError"
     bind:statechange="onVideoStateChange"
     bind:ended="onVideoEnded"
     bind:prev="prevChapter"
     bind:next="nextChapter"
+    bind:rotatechange="onVideoRotateChange"
   ></video-reader>
 
   <!-- 图书集合界面 -->
@@ -44,32 +40,10 @@
   ></text-reader>
 
   <view class="controls {{showControls ? 'show' : ''}}">
-    <view class="top-bar">
-      <view class="back" bindtap="goBack">
-        <image src="/images/icons/back.png"></image>
-      </view>
-      <view class="title">{{bookTitle}}</view>
-      <view class="menu" bindtap="showMenu">
-        <image src="/images/icons/menu.png"></image>
-      </view>
-    </view>
-
     <view class="bottom-bar" wx:if="{{contentType !== 'collection'}}">
-      <view class="progress">
-        <text class="current">{{contentType === 'text' ? '第' + currentChapter + '章' : currentTime}}</text>
-        <slider 
-          value="{{progress}}" 
-          min="0" 
-          max="100"
-          activeColor="#ff6b81"
-          backgroundColor="#ddd"
-          block-size="12"
-          bindchange="onProgressChange"/>
-        <text class="total">{{contentType === 'text' ? '共' + totalChapters + '章' : duration}}</text>
-      </view>
       
-      <!-- 音频/视频控制按钮 -->
-      <view class="actions" wx:if="{{contentType === 'audio' || contentType === 'video'}}">
+      <!-- 音频控制按钮 - 仅在音频播放时显示 -->
+      <view class="actions" wx:if="{{contentType === 'audio'}}">
         <view class="action-item" bindtap="prevChapter">
           <image src="/images/icons/prev.png"></image>
         </view>

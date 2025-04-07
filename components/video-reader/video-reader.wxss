@@ -16,6 +16,12 @@
   max-height: 100vh;
   position: relative;
   z-index: 5;
+  transition: transform 0.3s ease;
+}
+
+/* 旋转视频的样式 */
+.video-rotated {
+  transform: rotate(180deg);
 }
 
 .chapter-title {
@@ -50,20 +56,93 @@
   opacity: 1;
 }
 
+/* 自定义控制按钮 */
+.custom-controls {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  z-index: 10;
+  display: flex;
+  gap: 10rpx;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.custom-controls.show {
+  opacity: 1;
+}
+
+.custom-controls.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .control-btn {
   width: 80rpx;
   height: 80rpx;
-  margin: 0 20rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.control-btn:active {
+  transform: scale(0.9);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.rotate-btn {
+  font-size: 36rpx;
+}
+
+.rotate-icon {
+  font-weight: bold;
+  font-size: 40rpx;
+  transition: transform 0.3s ease;
+}
+
+/* 旋转图标动画效果 */
+.rotate-icon.rotated {
+  transform: scaleY(-1);
+}
+
+/* 视频播放控制遮罩 */
+.video-controls-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.3s ease;
+}
+
+.center-play-btn {
+  width: 120rpx;
+  height: 120rpx;
   background: rgba(0, 0, 0, 0.5);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: all 0.3s ease;
 }
 
-.control-btn image {
-  width: 40rpx;
-  height: 40rpx;
+.center-play-btn:active {
+  transform: scale(0.9);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.play-icon {
+  color: white;
+  font-size: 60rpx;
+  margin-left: 10rpx; /* 稍微调整播放图标居中 */
 }
 
 /* 加载状态 */

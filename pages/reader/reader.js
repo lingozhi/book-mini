@@ -146,7 +146,8 @@ Page({
             chapters: contents.map((content, index) => ({
               id: content.id,
               title: content.name,
-              content: content.richText
+              content: content.richText,
+              richText: content.richText
             })),
             totalChapters: contents.length
           });
@@ -176,9 +177,15 @@ Page({
       currentChapter: chapterIndex,
       chapter: {
         title: chapter.title,
-        content: chapter.content
+        content: chapter.content,
+        richText: chapter.richText
       },
       progress: (chapterIndex / this.data.totalChapters) * 100
+    });
+
+    // 设置导航栏标题为章节标题
+    wx.setNavigationBarTitle({
+      title: chapter.title || '阅读'
     });
 
     // 保存阅读进度
@@ -244,6 +251,11 @@ Page({
       }
     });
 
+    // 设置导航栏标题为章节标题
+    wx.setNavigationBarTitle({
+      title: chapter.title || '阅读'
+    });
+
     // 保存阅读进度
     this.saveReadingProgress();
   },
@@ -270,6 +282,11 @@ Page({
       videoUrl: chapter.url
     });
 
+    // 设置导航栏标题为章节标题
+    wx.setNavigationBarTitle({
+      title: chapter.title || '阅读'
+    });
+
     // 保存阅读进度
     this.saveReadingProgress();
   },
@@ -278,6 +295,16 @@ Page({
     // 视频准备就绪
     this.videoContext.play();
     this.setData({ isPlaying: true });
+  },
+
+  onVideoLoaded() {
+    // 视频加载完成，确保隐藏全局加载提示
+    wx.hideLoading();
+  },
+  
+  onVideoRotateChange(e) {
+    // 视频旋转状态变化
+    console.log('视频旋转状态:', e.detail.isRotated ? '已旋转' : '正常');
   },
 
   formatTime(seconds) {

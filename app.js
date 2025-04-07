@@ -108,6 +108,7 @@ App({
   setupRequestInterceptor() {
     // 保存原始的 wx.request 方法
     const originalRequest = wx.request;
+    const app = this;
     
     // 重写 wx.request 方法
     Object.defineProperty(wx, 'request', {
@@ -126,6 +127,36 @@ App({
           // 添加 token 到请求头，使用正确的字段名
           options.header['token'] = token;
         }
+        
+        // 保存原始的 success 回调
+        const originalSuccess = options.success;
+        
+        // 重写 success 回调函数，添加 token 过期检测
+        options.success = function(res) {
+          // 检查HTTP状态码是否为401或响应内容是否表明token过期
+          if (res.statusCode === 401 || 
+              (res.data && (res.data.code === 401 || 
+              res.data.message === 'token已过期' || 
+              res.data.message === 'token验证失败' || 
+              res.data.message === '未登录'))) {
+            console.log('Token 已过期，正在清除登录状态...', res);
+            
+            // 调用应用的退出登录方法
+            app.handleTokenExpired();
+            
+            // 可以提示用户
+            wx.showToast({
+              title: '登录已过期，请重新登录',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+          
+          // 调用原始的 success 回调
+          if (originalSuccess) {
+            originalSuccess(res);
+          }
+        };
         
         // 调用原始的 request 方法
         return originalRequest(options);
@@ -211,5 +242,30 @@ App({
     // 更新全局状态
     this.globalData.isLoggedIn = false;
     this.globalData.userInfo = null;
+  },
+
+  handleTokenExpired() {
+    // 实现退出登录的逻辑
+    this.logout();
+    
+    // 获取当前页面
+    const pages = getCurrentPages();
+    if (pages.length > 0) {
+      // 检查并调用每个页面的 onTokenExpired 方法（如果存在）
+      pages.forEach(page => {
+        if (page && typeof page.onTokenExpired === 'function') {
+          page.onTokenExpired();
+        }
+      });
+      
+      // 如果当前不在"我的"页面，可以考虑跳转到登录页面
+      const currentPage = pages[pages.length - 1];
+      if (currentPage.route !== 'pages/mine/mine') {
+        // 根据实际需求决定是否跳转
+        wx.switchTab({
+          url: '/pages/mine/mine'
+        });
+      }
+    }
   }
 })
