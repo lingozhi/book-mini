@@ -1,11 +1,23 @@
-<view class="reader-container" bindtap="toggleControls">
+<view class="reader-container" bindtap="{{contentType !== 'audio' ? 'toggleControls' : ''}}">
 
   <!-- 音频播放界面 -->
   <audio-reader 
+    id="audio-reader"
     wx:if="{{contentType === 'audio'}}"
     chapter="{{chapter}}"
     isPlaying="{{isPlaying}}"
+    currentTime="{{currentTime}}"
+    duration="{{duration}}"
+    progress="{{progress}}"
+    bind:togglePlay="togglePlay"
+    bind:prev="prevChapter"
+    bind:next="nextChapter"
+    bind:progressChange="onProgressChange"
+    bind:timeUpdate="onAudioTimeUpdate"
+    bind:statusUpdate="onAudioStatusUpdate"
+    bind:error="onAudioError"
   ></audio-reader>
+
 
   <!-- 视频播放界面 -->
   <video-reader 
@@ -40,23 +52,10 @@
   ></text-reader>
 
   <view class="controls {{showControls ? 'show' : ''}}">
-    <view class="bottom-bar" wx:if="{{contentType !== 'collection'}}">
-      
-      <!-- 音频控制按钮 - 仅在音频播放时显示 -->
-      <view class="actions" wx:if="{{contentType === 'audio'}}">
-        <view class="action-item" bindtap="prevChapter">
-          <image src="/images/icons/prev.png"></image>
-        </view>
-        <view class="action-item play-btn" bindtap="togglePlay">
-          <image src="{{isPlaying ? '/images/icons/pause.png' : '/images/icons/play.png'}}"></image>
-        </view>
-        <view class="action-item" bindtap="nextChapter">
-          <image src="/images/icons/next.png"></image>
-        </view>
-      </view>
+    <view class="bottom-bar" wx:if="{{contentType !== 'collection' && contentType !== 'audio'}}">
       
       <!-- 文本阅读控制按钮 -->
-      <view class="actions" wx:else>
+      <view class="actions">
         <view class="action-item" bindtap="prevChapter">上一章</view>
         <view class="action-item" bindtap="toggleTheme">
           <image src="/images/icons/theme.png"></image>

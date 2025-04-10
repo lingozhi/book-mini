@@ -62,9 +62,20 @@ Page({
           });
 
           // 判断内容类型
-          if (bookData.series === true && bookData.sonBooks && bookData.sonBooks.length > 0) {
+          if (bookData.series === true) {
             // 这是一个图书集合
-            this.handleCollectionBook(bookData);
+            if (bookData.sonBooks && bookData.sonBooks.length > 0) {
+              // 处理子书籍集合
+              this.handleCollectionBook(bookData);
+            } else if (bookData.contents && bookData.contents.length > 0) {
+              // 处理内容集合（当series为true但sonBooks为空时）
+              this.handleSeriesContents(bookData.contents);
+            } else {
+              wx.showToast({
+                title: '该书暂无内容',
+                icon: 'none'
+              });
+            }
           } else if (bookData.contents && bookData.contents.length > 0) {
             // 处理图书内容
             this.handleBookContents(bookData.contents);
@@ -99,6 +110,23 @@ Page({
       id: book.id,
       title: book.name,
       cover: book.coverPath || '/images/default-cover.png'
+    }));
+
+    this.setData({
+      contentType: 'collection',
+      collection: collection
+    });
+  },
+
+  handleSeriesContents(contents) {
+    // 当series=true但sonBooks为空时，将contents内容作为集合展示
+    const collection = contents.map(content => ({
+      id: content.id,
+      title: content.name,
+      cover: content.coverPath || '/images/default-cover.png',
+      type: content.type,
+      url: content.filePath,
+      richText: content.richText
     }));
 
     this.setData({
@@ -206,55 +234,44 @@ Page({
     // 停止当前播放的音频
     if (this.audioContext) {
       this.audioContext.stop();
+      this.audioContext = null;
     }
 
-    // 创建新的音频上下文
-    this.audioContext = wx.createInnerAudioContext();
-    this.audioContext.src = chapter.url;
-    this.audioContext.onPlay(() => {
-      this.setData({ isPlaying: true });
-    });
-    this.audioContext.onPause(() => {
-      this.setData({ isPlaying: false });
-    });
-    this.audioContext.onStop(() => {
-      this.setData({ isPlaying: false });
-    });
-    this.audioContext.onEnded(() => {
-      this.setData({ isPlaying: false });
-      // 自动播放下一章
-      this.nextChapter();
-    });
-    this.audioContext.onTimeUpdate(() => {
-      const currentTime = this.formatTime(this.audioContext.currentTime);
-      const duration = this.formatTime(this.audioContext.duration);
-      const progress = (this.audioContext.currentTime / this.audioContext.duration) * 100;
-      
-      this.setData({
-        currentTime,
-        duration,
-        progress
-      });
-    });
-    this.audioContext.onError((err) => {
-      console.error('音频播放错误:', err);
-      wx.showToast({
-        title: '音频播放失败',
-        icon: 'none'
-      });
-    });
-
+    console.log('Setting audio chapter:', chapter);
+    
+    // 更新章节信息，直接传递URL给audio-reader组件
     this.setData({
       currentChapter: chapterIndex,
       chapter: {
-        title: chapter.title
-      }
+        title: chapter.title,
+        filePath: chapter.url  // 确保将URL设置为filePath
+      },
+      isPlaying: true  // 自动开始播放
     });
 
     // 设置导航栏标题为章节标题
     wx.setNavigationBarTitle({
       title: chapter.title || '阅读'
     });
+
+    // 获取audio-reader组件实例
+    setTimeout(() => {
+      const audioReader = this.selectComponent('audio-reader') || this.selectComponent('#audio-reader');
+      if (audioReader) {
+        console.log('Audio reader component found, trying to play');
+        // 使用组件的方法设置URL并播放
+        audioReader.setUrl(chapter.url, chapter.title);
+      } else {
+        console.log('Audio reader component not found, trying with ID selector');
+        const audioReaderById = this.selectComponent('#audio-reader');
+        if (audioReaderById) {
+          console.log('Audio reader found by ID, trying to play');
+          audioReaderById.setUrl(chapter.url, chapter.title);
+        } else {
+          console.error('Audio reader component not found with any selector');
+        }
+      }
+    }, 300);
 
     // 保存阅读进度
     this.saveReadingProgress();
@@ -325,10 +342,27 @@ Page({
 
   togglePlay() {
     if (this.data.contentType === 'audio') {
-      if (this.data.isPlaying) {
-        this.audioContext.pause();
+      console.log('触发播放/暂停切换，当前状态:', this.data.isPlaying ? '播放中' : '已暂停');
+      
+      // 获取audio-reader组件实例
+      const audioReader = this.selectComponent('#audio-reader');
+      if (audioReader) {
+        console.log('找到音频组件，切换播放状态');
+        
+        // 反转播放状态
+        const newPlayState = !this.data.isPlaying;
+        
+        // 直接调用组件的onPlayTap方法模拟按钮点击
+        audioReader.onPlayTap();
+        
+        // 我们依赖组件通过statusUpdate事件来更新isPlaying状态
+        console.log('播放状态切换请求已发送');
       } else {
-        this.audioContext.play();
+        console.error('未找到音频组件，无法控制播放');
+        wx.showToast({
+          title: '播放器加载中...',
+          icon: 'none'
+        });
       }
     } else if (this.data.contentType === 'video') {
       if (this.data.isPlaying) {
@@ -430,8 +464,14 @@ Page({
       this.loadTextChapter(chapter);
     } else if (this.data.contentType === 'audio') {
       // 音频内容的进度条表示播放进度
-      const seekTime = (value / 100) * this.audioContext.duration;
-      this.audioContext.seek(seekTime);
+      // 获取audio-reader组件实例
+      const audioReader = this.selectComponent('#audio-reader');
+      if (audioReader) {
+        console.log('Progress change handled by audio-reader component');
+        // 组件内部会处理进度条变化事件
+      } else {
+        console.error('Audio reader component not found for progress change');
+      }
     } else if (this.data.contentType === 'video') {
       // 视频内容的进度条表示播放进度
       const seekTime = (value / 100) * this.videoContext.duration;
@@ -477,19 +517,162 @@ Page({
     });
   },
 
+  onBookTap(e) {
+    const itemId = e.detail.id;
+    
+    // 找到对应的内容项
+    const contentItem = this.data.collection.find(item => item.id === itemId);
+    
+    if (contentItem) {
+      if (contentItem.type === 1) { // 视频
+        // 设置为视频模式
+        this.setData({
+          contentType: 'video',
+          videoUrl: contentItem.url,
+          chapter: {
+            title: contentItem.title
+          }
+        });
+      } else if (contentItem.type === 2) { // 音频
+        // 设置为音频模式，并通过chapter属性传递音频URL和标题
+        this.setData({
+          contentType: 'audio',
+          chapter: {
+            title: contentItem.title,
+            filePath: contentItem.url  // 重要：将URL设置为filePath
+          },
+          isPlaying: true  // 设置为播放状态
+        });
+        
+        // 通过setTimeout确保组件已挂载
+        setTimeout(() => {
+          // 获取audio-reader组件实例
+          const audioReader = this.selectComponent('audio-reader') || this.selectComponent('#audio-reader');
+          if (audioReader) {
+            console.log('Audio reader component found, trying to play');
+            // 使用组件的方法设置URL并播放
+            audioReader.setUrl(contentItem.url, contentItem.title);
+          } else {
+            console.error('Audio reader component not found with any selector');
+          }
+        }, 300);
+      } else if (contentItem.type === 3) { // 富文本
+        // 设置为文本模式
+        this.setData({
+          contentType: 'text',
+          chapter: {
+            title: contentItem.title,
+            content: contentItem.richText,
+            richText: contentItem.richText
+          }
+        });
+      } else {
+        // 如果是普通图书，导航到该图书
+        wx.navigateTo({
+          url: `/pages/reader/reader?id=${itemId}&chapter=1`
+        });
+      }
+      
+      // 设置导航栏标题
+      wx.setNavigationBarTitle({
+        title: contentItem.title || '阅读'
+      });
+    }
+  },
+
   goBack() {
     wx.navigateBack();
   },
 
   onUnload() {
     // 页面卸载时释放资源
+    console.log('Reader page unloading, cleaning up resources');
+    
+    // 获取音频组件并停止播放
+    if (this.data.contentType === 'audio') {
+      const audioReader = this.selectComponent('audio-reader') || this.selectComponent('#audio-reader');
+      if (audioReader) {
+        console.log('Stopping audio reader component');
+        // 调用组件的pause方法
+        this.setData({ isPlaying: false });
+      }
+    }
+    
+    // 释放可能存在的直接音频资源
     if (this.audioContext) {
+      console.log('Cleaning up direct audio context');
       this.audioContext.stop();
       this.audioContext.destroy();
+      this.audioContext = null;
     }
     
     if (this.videoContext) {
+      console.log('Cleaning up video context');
       this.videoContext = null;
     }
-  }
+  },
+  
+  // 处理音频时间更新事件
+  onAudioTimeUpdate(e) {
+    // 更新页面上的时间和进度数据
+    this.setData({
+      currentTime: e.detail.currentTime,
+      duration: e.detail.duration,
+      progress: e.detail.progress
+    });
+  },
+  
+  // 处理音频状态更新事件
+  onAudioStatusUpdate(e) {
+    console.log('收到音频状态更新:', e.detail);
+    
+    // 使用 wx.nextTick 确保状态更新完成
+    wx.nextTick(() => {
+      // 更新播放状态
+      this.setData({
+        isPlaying: e.detail.isPlaying
+      });
+      console.log('页面播放状态已更新为:', e.detail.isPlaying ? '播放' : '暂停');
+    });
+  },
+  
+  // 处理音频错误事件
+  onAudioError(e) {
+    console.error('Audio error:', e.detail);
+    wx.showToast({
+      title: '音频播放失败: ' + (e.detail.errMsg || '未知错误'),
+      icon: 'none'
+    });
+  },
+
+  // 直接控制音频播放/暂停
+  directAudioControl() {
+    console.log('执行直接音频控制');
+    
+    // 获取音频组件
+    const audioReader = this.selectComponent('#audio-reader');
+    if (!audioReader) {
+      console.error('无法获取音频组件');
+      wx.showToast({
+        title: '无法控制音频',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 切换播放状态
+    const newState = !this.data.isPlaying;
+    console.log('尝试直接将音频状态切换为:', newState ? '播放' : '暂停');
+    
+    if (newState) {
+      // 播放
+      audioReader.play();
+    } else {
+      // 暂停
+      audioReader.pause();
+    }
+    
+    // 状态会通过事件更新，不需要在这里设置
+    console.log('已发送音频控制命令:', newState ? '播放' : '暂停');
+  },
 }); 
