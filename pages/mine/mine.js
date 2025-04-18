@@ -94,7 +94,8 @@ Page({
             if (loginRes.code) {
               // 调用后端登录接口
               wx.request({
-                url: 'http://120.79.48.168:8080/we-chat/login', // 替换为你的后端登录接口
+                url: 'https://quxiang.agreesoft.com/api/we-chat/login', // 替换为你的后端登录接口
+                // url: 'http://120.76.156.99:8080/we-chat/login', // 替换为你的后端登录接口
                 method: 'POST',
                 data: {
                   code: loginRes.code,

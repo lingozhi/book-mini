@@ -3,7 +3,8 @@ App({
   globalData: {
     userInfo: null,
     isLoggedIn: false,
-    baseUrl: 'http://120.79.48.168:8080', // 替换为你的实际接口地址
+    baseUrl: 'https://quxiang.agreesoft.com/api', // 替换为你的实际接口地址
+    //  baseUrl: 'http://120.76.156.99:8080', // 替换为你的实际接口地址
     books: [
       {
         id: '1',
